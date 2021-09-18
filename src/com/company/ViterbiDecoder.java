@@ -7,6 +7,7 @@ public class ViterbiDecoder implements IDecoder
 {
     private IEncoder encoder;
     private int decodingDepth;
+    private StateTransitionLUT transitions;
 
     public ViterbiDecoder(IEncoder e)
     {

@@ -81,7 +81,7 @@ public class ViterbiBMP
         }
         assert equals(asciiBytes != null);
 
-        // todo
+        // decode image and write to disk
     }
 
     /**

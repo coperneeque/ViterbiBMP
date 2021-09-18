@@ -33,7 +33,9 @@ public class Main
         INoiseGenerator noiseGenerator = new NoiseGenerator();
         noiseGenerator.setErrorRate(errorRate);
         IEncoder is95Encoder = new EncoderIS95();
+
         ViterbiBMP viterbi = new ViterbiBMP(plainEncoder, plainDecoder, noiseGenerator, is95Encoder);
+
         viterbi.runPlain(imagePath, textPath, outImgPath);
         viterbi.runIS95(imagePath, outIS95Path, decodedImgPath);
     }
