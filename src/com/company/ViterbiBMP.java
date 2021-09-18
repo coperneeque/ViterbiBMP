@@ -10,17 +10,19 @@ import java.util.Collections;
 
 public class ViterbiBMP
 {
-    static final int BITS_PER_PIXEL     = 24;
+    static final int BITS_PER_PIXEL = 24;
 
-    private IPlainEncoder plainEncoder;
-    private IPlainDecoder plainDecoder;
-    private IEncoder is95Encoder;
+    private final IPlainEncoder   plainEncoder;
+    private final IPlainDecoder   plainDecoder;
+    private final INoiseGenerator noiseGenerator;
+    private final IEncoder        is95Encoder;
 
-    public ViterbiBMP(IPlainEncoder pe, IPlainDecoder pd, IEncoder e)
+    public ViterbiBMP(IPlainEncoder pe, IPlainDecoder pd, INoiseGenerator ng, IEncoder e)
     {
-        assert equals(pe != null && pd != null && e != null);
+        assert equals(pe != null && pd != null && ng != null && e != null);
         plainEncoder = pe;
         plainDecoder = pd;
+        noiseGenerator = ng;
         is95Encoder = e;
     }
 
@@ -34,9 +36,8 @@ public class ViterbiBMP
      */
     public void runPlain(Path inBMPPath, Path txtPath, Path outBMPPath)
     {
-        BufferedImage inImg = null;
-
         // read BMP image from disk:
+        BufferedImage inImg = null;
         try {
             inImg = ImageIO.read(new File(String.valueOf(inBMPPath)));
         } catch (IOException e) {
@@ -44,8 +45,11 @@ public class ViterbiBMP
         }
         assert equals(inImg != null);
 
-        // encode image and write ascii to disk:
+        // encode image, add noise and write ascii to disk:
         String plainText = plainEncoder.encode(inImg);
+        if (noiseGenerator != null) {
+            plainText = noiseGenerator.noisify(plainText);
+        }
         try {
             Files.write(txtPath, Collections.singleton(plainText));
         } catch (IOException e) {

@@ -26,5 +26,13 @@ public class Main {
 
         Path decodedImgPath = Paths.get("assets", "outIS95.bmp");
         if (args.length > 7) decodedImgPath = Paths.get(args[7]);
+
+        IPlainEncoder plainEncoder = new PlainEncoder();
+        IPlainDecoder plainDecoder = new PlainDecoder();
+        INoiseGenerator noiseGenerator = new NoiseGenerator();
+        noiseGenerator.setErrorRate(errorRate);
+        IEncoder is95Encoder = new EncoderIS95();
+        ViterbiBMP viterbiBMP = new ViterbiBMP(plainEncoder, plainDecoder, noiseGenerator, is95Encoder);
+        viterbiBMP.runPlain(imagePath, textPath, outImgPath);
     }
 }

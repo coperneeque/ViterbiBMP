@@ -25,7 +25,7 @@ public class PlainEncoder implements IPlainEncoder
         }
 
 //        if (noiseGenerator != null) {
-//            s = noiseGenerator.noisifyString(s);
+//            s = noiseGenerator.noisify(s);
 //        }
         return sb.toString();
     }
