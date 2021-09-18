@@ -1,32 +1,12 @@
 package com.company;
 
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.LinkedList;
 
 public class PlainDecoder implements IPlainDecoder
 {
     @Override
-    public byte[] readAscii(Path path) throws IOException
-    {
-        byte[] asciiBytes = Files.readAllBytes(path);  // assume there is correct number of bytes
-
-        // trim EOL:
-        if (asciiBytes[asciiBytes.length-1] == 0x0D)  // CR - macOS
-            asciiBytes = Arrays.copyOfRange(asciiBytes, 0, asciiBytes.length - 1);
-        else if (asciiBytes[asciiBytes.length-1] == 0x0A)  // LF - Unix/Mac
-            asciiBytes = Arrays.copyOfRange(asciiBytes, 0, asciiBytes.length-1);
-        else if (asciiBytes[asciiBytes.length-2] == 0x0D && asciiBytes[asciiBytes.length-1] == 0x0A)  // CR LF - Windows
-            asciiBytes = Arrays.copyOfRange(asciiBytes, 0, asciiBytes.length-2);
-
-        return asciiBytes;
-    }
-
-    @Override
-    public BufferedImage outputBMP(byte[] asciiBytes, int width, int height)
+    public BufferedImage decodeBMP(byte[] asciiBytes, int width, int height)
     {
         assert equals(asciiBytes != null);
         assert equals(asciiBytes.length == width * height * ViterbiBMP.BITS_PER_PIXEL);
