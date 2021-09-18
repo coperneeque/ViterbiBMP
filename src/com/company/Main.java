@@ -3,9 +3,10 @@ package com.company;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class Main {
-
-    public static void main(String[] args) {
+public class Main
+{
+    public static void main(String[] args)
+    {
         Path imagePath = Paths.get("assets", "bee100.bmp");
         if (args.length > 1) imagePath = Paths.get(args[1]);
 
@@ -15,7 +16,7 @@ public class Main {
         Path outImgPath = Paths.get("assets", "out100.bmp");
         if (args.length > 3) outImgPath = Paths.get(args[3]);
 
-        int errorRate = 10;
+        int errorRate = 5;
         if (args.length > 4) errorRate = Integer.parseInt(args[4]);
 
         Path outIS95Path = Paths.get("assets", "outIS95.txt");
@@ -34,5 +35,6 @@ public class Main {
         IEncoder is95Encoder = new EncoderIS95();
         ViterbiBMP viterbiBMP = new ViterbiBMP(plainEncoder, plainDecoder, noiseGenerator, is95Encoder);
         viterbiBMP.runPlain(imagePath, textPath, outImgPath);
+        viterbiBMP.runIS95(imagePath, outIS95Path, decodedImgPath);
     }
 }

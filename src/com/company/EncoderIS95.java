@@ -11,9 +11,7 @@ public class EncoderIS95 implements IEncoder
 {
     final int       IS95_OUTPUT_LENGTH;  // 32 bit maximum
     final int       IS95_DELAY          = 8;
-    final boolean   WITH_OUTPUT_BITS    = true;
-
-//    private  BufferedImage inImg;
+    final boolean   WITH_OUTPUT_BITS    = false;
 
     public EncoderIS95()
     {
@@ -21,7 +19,6 @@ public class EncoderIS95 implements IEncoder
             IS95_OUTPUT_LENGTH = 4;
         else
             IS95_OUTPUT_LENGTH = 3;
-
     }
 
     @Override
@@ -30,7 +27,7 @@ public class EncoderIS95 implements IEncoder
     @Override
     public String encode(BufferedImage inImg) throws NullPointerException
     {
-        if (inImg == null) throw new NullPointerException("Load BMP image from disk first!");
+//        if (inImg == null) throw new NullPointerException("Load BMP image from disk first!");
 
         StringBuilder sb = new StringBuilder();
         int rgb;
@@ -43,6 +40,21 @@ public class EncoderIS95 implements IEncoder
                 sb.append(encode24bits(rgb | (int)lsr & 0xff));
                 lsr = (byte) (rgb >>> BITS_PER_PIXEL);
             }
+        }
+
+        return sb.toString();
+    }
+
+    private String encode24bits(int rgblsr)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for(int i = 0; i < BITS_PER_PIXEL; ++i) {
+            sb.append(g0(rgblsr));  // c0
+            if (WITH_OUTPUT_BITS) sb.append(rgblsr & 0x01);  // output bits
+            sb.append(g1(rgblsr));  // c1
+            sb.append(g2(rgblsr));  // c2
+            rgblsr >>>= 1;
         }
 
         return sb.toString();
@@ -83,22 +95,7 @@ public class EncoderIS95 implements IEncoder
                 inputBitsLSR >> 3 ^
                 inputBitsLSR) & 0x01; */
     }
+
     @Override
     public boolean withOutputBits() { return WITH_OUTPUT_BITS; }
-
-    private String encode24bits(int rgblsr)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        for(int i = 0; i < BITS_PER_PIXEL; ++i) {
-            sb.append(g0(rgblsr));  // c0
-            if (WITH_OUTPUT_BITS) sb.append(rgblsr & 0x01);  // output bits
-            sb.append(g1(rgblsr));  // c1
-            sb.append(g2(rgblsr));  // c2
-            rgblsr >>>= 1;
-        }
-
-        return sb.toString();
-    }
-
 }

@@ -11,8 +11,6 @@ public class PlainEncoder implements IPlainEncoder
     @Override
     public String encode(BufferedImage inImg) throws NullPointerException
     {
-        if (inImg == null) { throw new NullPointerException("Load BMP image from disk first!"); }
-
         StringBuilder sb = new StringBuilder();
         int rgb;
         String binString;
@@ -24,15 +22,6 @@ public class PlainEncoder implements IPlainEncoder
             }
         }
 
-//        if (noiseGenerator != null) {
-//            s = noiseGenerator.noisify(s);
-//        }
         return sb.toString();
-    }
-
-    @Override
-    public BufferedImage readBMP(Path path) throws IOException
-    {
-        return ImageIO.read(new File(String.valueOf(path)));
     }
 }

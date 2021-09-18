@@ -1,5 +1,7 @@
 package com.company;
 
+import java.security.InvalidParameterException;
+
 public interface INoiseGenerator
 {
     /**
@@ -7,7 +9,7 @@ public interface INoiseGenerator
      *
      * @param r Error rate in parts per 10 000.
      */
-    void setErrorRate(int r);
+    void setErrorRate(int r) throws InvalidParameterException;
 
     /**
      * Simulate channel noise by flipping bits randomly from '0' to '1' and vice-versa.

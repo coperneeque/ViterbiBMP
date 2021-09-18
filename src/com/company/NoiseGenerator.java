@@ -1,5 +1,6 @@
 package com.company;
 
+import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
@@ -12,17 +13,20 @@ public class NoiseGenerator implements INoiseGenerator
     private SecureRandom rand  = new SecureRandom();
 
     @Override
-    public void setErrorRate(int r)
+    public void setErrorRate(int r) throws InvalidParameterException
     {
-//        if (r < 0 || r > bound-1) throw new InvalidParameterException("ErrorRate must be between 0 and 10000!");
-        assert equals(r >= 0 && r < BOUND);
+        if (r < 0 || r > BOUND-1) throw new InvalidParameterException("ErrorRate must be between 0 and 10000!");
+//        assert equals(r >= 0 && r < BOUND);
         errorRate = r;
     }
 
     @Override
     public String noisify(String s)
     {
-        if (errorRate == 0) return s;
+        if (errorRate == 0) {
+            System.out.println("[ NoiseGenerator ] Requested error rate: 0. No noise added to signal");
+            return s;
+        }
 
         errorCount = 0;
         char[] chars = s.toCharArray();
@@ -31,9 +35,10 @@ public class NoiseGenerator implements INoiseGenerator
             chars[i] = noisifyChar(chars[i]);
         }
 
-        System.out.println("[ NoiseGenerator ] " + chars.length + " bits in channel. " + errorCount + " errors\n"
-                           + "[ NoiseGenerator ] Requested error rate: " + (double) errorRate / (BOUND-1) * 100
-                           + "%. Actual error rate: " + (double) errorCount / chars.length * 100 + "%");
+        System.out.println("[ NoiseGenerator ] " + chars.length + " bits in channel. " + errorCount + " errors\n" +
+                           "[ NoiseGenerator ] Requested error rate: " + (float) errorRate / (BOUND-1) * 100 +
+                           "%. Actual error rate: " + (float) errorCount / chars.length * 100 + "%");
+
         return new String(chars);
     }
 

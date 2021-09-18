@@ -72,5 +72,36 @@ public class ViterbiBMP
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+    }
+    /**
+     * Execute IS-95 standard encoding of the BMP image pixels to text file containing '0's and '1's.
+     * Execute Viterbi decoding of text file to new image file.
+     *
+     * @param inBMPPath Path to original BMP image
+     * @param txtPath Path to output txt file
+     * @param outBMPPath Path to decoded BMP image
+     */
+    public void runIS95(Path inBMPPath, Path txtPath, Path outBMPPath)
+    {
+        // read BMP image from disk:
+        BufferedImage inImg = null;
+        try {
+            inImg = ImageIO.read(new File(String.valueOf(inBMPPath)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assert equals(inImg != null);
+
+        // encode image, add noise and write ascii to disk:
+        String is95Text = is95Encoder.encode(inImg);
+        if (noiseGenerator != null) {
+            is95Text = noiseGenerator.noisify(is95Text);
+        }
+        try {
+            Files.write(txtPath, Collections.singleton(is95Text));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

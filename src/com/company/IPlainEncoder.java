@@ -10,5 +10,4 @@ import java.nio.file.Path;
 public interface IPlainEncoder
 {
     String encode(BufferedImage inImg) throws NullPointerException;
-    BufferedImage readBMP(Path path) throws IOException;
 }
