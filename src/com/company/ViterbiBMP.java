@@ -1,6 +1,12 @@
 package com.company;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 
 public class ViterbiBMP
 {
@@ -28,6 +34,39 @@ public class ViterbiBMP
      */
     public void runPlain(Path inBMPPath, Path txtPath, Path outBMPPath)
     {
+        BufferedImage inImg = null;
 
+        // read BMP image from disk:
+        try {
+            inImg = ImageIO.read(new File(String.valueOf(inBMPPath)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assert equals(inImg != null);
+
+        // encode image and write ascii to disk:
+        String plainText = plainEncoder.encode(inImg);
+        try {
+            Files.write(txtPath, Collections.singleton(plainText));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // read ASCII from disk:
+        byte[] asciiBytes = null;
+        try {
+            asciiBytes = plainDecoder.readAscii(txtPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assert equals(asciiBytes != null);
+
+        // decode image and write BMP to disk:
+        BufferedImage outImg = plainDecoder.outputBMP(asciiBytes, inImg.getWidth(), inImg.getHeight());
+        try {
+            ImageIO.write(outImg, "bmp", new File(outBMPPath.toString()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
