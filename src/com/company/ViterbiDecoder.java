@@ -14,6 +14,7 @@ public class ViterbiDecoder implements IDecoder
 {
     private       int                decodingDepth;
     private final IEncoder           encoder;
+    private       int                fullPathMetric;
     private       int                MAX_PATH_METRIC;
     private final int                MASK;
     private final int                NUM_STATES;
@@ -57,6 +58,7 @@ public class ViterbiDecoder implements IDecoder
         if (plainText.length > numPixels * BITS_PER_PIXEL)
             plainText = Arrays.copyOf(plainText, numPixels * BITS_PER_PIXEL);
 
+        System.out.println("[ ViterbiDecoder] Full path metric: " + fullPathMetric);
         return plainText;
     }
 
@@ -105,11 +107,10 @@ public class ViterbiDecoder implements IDecoder
             }
         }
 
-        // read the path from terminal node back to starting node:
-        int[] viterbiPath = new int[decodingDepth];
-        int[] encoderOutput = new int[decodingDepth];
-        int[] origMessage = new int[decodingDepth];
+        fullPathMetric += pathMetric[terminalNode][decodingDepth -1];
 
+        // read the path from terminal node back to starting node:
+        int[] origMessage = new int[decodingDepth];
         int currentNode = terminalNode;
         int prevNode;
         int input;
@@ -120,8 +121,6 @@ public class ViterbiDecoder implements IDecoder
             } else if (transitions.nextState(prevNode, 1) == currentNode) {
                 input = 1;
             } else throw new NoSuchElementException("Impossible IS-95 state machine transition from state " + prevNode + " to state " + currentNode + " in Viterbi path at depth " + depth);
-            viterbiPath[depth] = currentNode;
-            encoderOutput[depth] = transitions.output(prevNode, input);
             origMessage[depth] = input;
             currentNode = prevNode;
         }
