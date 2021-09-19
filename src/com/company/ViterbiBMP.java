@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -27,6 +28,17 @@ public class ViterbiBMP
         noiseGenerator = ng;
         is95Encoder = e;
         viterbiDecoder = vd;
+    }
+
+    /**
+     * Count and print bit errors that were not corrected by the Viterbi decoder
+     *
+     * @param inBMPPath Original image path
+     * @param outBMPPath Decoded image path
+     */
+    public void displayErrors(Path inBMPPath, Path outBMPPath)
+    {
+        System.out.println("[ ViterbiBMP ] Bit errors in decoded image: " + errorCount(inBMPPath, outBMPPath));
     }
 
     /**
@@ -69,7 +81,7 @@ public class ViterbiBMP
         assert equals(codeText != null);
 
         // decode image and write to disk:
-        byte[] plainText = viterbiDecoder.decodeIS95(codeText, inImg.getWidth(), inImg.getHeight());
+        byte[] plainText = viterbiDecoder.decodeIS95(codeText, inImg.getWidth() * inImg.getHeight());
         // after decoding use existing functionality to write plain-text to BMP:
         BufferedImage outImg = plainDecoder.decodeBMP(plainText, inImg.getWidth(), inImg.getHeight());
         try {
@@ -125,6 +137,31 @@ public class ViterbiBMP
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private int errorCount(Path inBMPPath, Path outBMPPath)
+    {
+        BufferedImage inImg = null;
+        BufferedImage outImg = null;
+        try {
+            inImg = ImageIO.read(new File(String.valueOf(inBMPPath)));
+            outImg = ImageIO.read(new File(String.valueOf(outBMPPath)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assert equals(inImg != null && outImg != null);
+
+        if (inImg.getWidth() != outImg.getWidth() || inImg.getHeight() != outImg.getHeight())
+            throw new InvalidParameterException("[ errorCount ] Original image and decoded image are not the same size!");
+
+        int errors = 0;
+        for (int h = 0; h < inImg.getHeight(); ++h) {
+            for (int w = 0; w < inImg.getWidth(); ++w) {
+                errors += Integer.bitCount(inImg.getRGB(w, h) ^ outImg.getRGB(w, h));
+            }
+        }
+
+        return errors;
     }
 
     private byte[] readCodeText(Path path) throws IOException

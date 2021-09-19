@@ -19,7 +19,7 @@ public class Main
 //        Path outImgPath = Paths.get("assets", "testerout.bmp");
         if (args.length > 3) outImgPath = Paths.get(args[3]);
 
-        int errorRate = 0;
+        int errorRate = 10;
         if (args.length > 4) errorRate = Integer.parseInt(args[4]);
 
         Path outIS95Path = Paths.get("assets", "outIS95.txt");
@@ -47,5 +47,6 @@ public class Main
 
         viterbi.runPlain(imagePath, textPath, outImgPath);
         viterbi.runIS95(imagePath, outIS95Path, decodedImgPath);
+        viterbi.displayErrors(imagePath, decodedImgPath);
     }
 }

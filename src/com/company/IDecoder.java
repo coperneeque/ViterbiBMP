@@ -2,7 +2,14 @@ package com.company;
 
 public interface IDecoder
 {
-    byte[] decodeIS95(byte[] codeText, int width, int height);
+    /**
+     * Viterbi Hard Decision decoder.
+     * Decodes the signal and stores in memory in byte array.
+     *
+     * @param codeText byte array containing code-text in '0' and '1' form
+     * @param numPixels Number of pixels in original image
+     */
+    byte[] decodeIS95(byte[] codeText, int numPixels);
 
     /**
      * Sets the decoding depth of the Viterbi algorithm.

@@ -15,38 +15,28 @@ public class ViterbiDecoder implements IDecoder
     private       int                decodingDepth;
     private final IEncoder           encoder;
     private       int                MAX_PATH_METRIC;
-    private       int                MASK;
-    private       int                numStates;
+    private final int                MASK;
+    private final int                NUM_STATES;
     private       int[][]            pathMetric;
-    private       int[][]            pathPreviousVertex;
+    private       int[][]            pathPreviousNode;
     private final StateTransitionLUT transitions;
-    private       int                terminalState = 0;
+    private       int                terminalNode = 0;
 
     public ViterbiDecoder(IEncoder e)
     {
-        encoder = e;
-        numStates = (int) Math.pow(2, encoder.delay());
-        MASK = numStates - 1;
+        encoder     = e;
+        NUM_STATES  = (int) Math.pow(2, encoder.delay());
+        MASK        = NUM_STATES - 1;
         transitions = new StateTransitionLUT(encoder);
     }
 
-    /**
-     *
-     * Viterbi Hard Decision decoder.
-     * Decodes the signal and stores in memory in byte array.
-     *
-     * @param codeText byte array containig code-text in '0' and '1' form
-     * @param width Original image width
-     * @param height Original image height
-     */
     @Override
-    public byte[] decodeIS95(byte[] codeText, int width, int height)
+    public byte[] decodeIS95(byte[] codeText, int numPixels)
     {
         int[] signalChunks = parseToIntArray(codeText);
 
         StringBuilder sb = new StringBuilder();
 
-        int prevState = terminalState;  // previous state machine state, one of 0 to 2^IS95_DELAY-1
         for (int i = 0; i < signalChunks.length; i += decodingDepth) {
             /*
              * During final iteration the remaining available signal might be shorter than required for the expected decoding depth.
@@ -54,10 +44,9 @@ public class ViterbiDecoder implements IDecoder
              * Later we will trim the excess.
              */
             int[] toDecode = Arrays.copyOfRange(signalChunks, i, i + decodingDepth);
-            initViterbi(prevState, toDecode);
+            initViterbi(terminalNode, toDecode);
             viterbi(toDecode);
             sb.append(originalMessage());
-            prevState = terminalState;
         }
 
         byte[] plainText = sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -65,8 +54,8 @@ public class ViterbiDecoder implements IDecoder
          * We are expecting height × width × BITS_PER_PIXEL bytes of image data (for bee100.bmp it's 978000 bytes).
          * Trim the excess if padding occurred.
          */
-        if (plainText.length > height * width * BITS_PER_PIXEL)
-            plainText = Arrays.copyOf(plainText, height * width * BITS_PER_PIXEL);
+        if (plainText.length > numPixels * BITS_PER_PIXEL)
+            plainText = Arrays.copyOf(plainText, numPixels * BITS_PER_PIXEL);
 
         return plainText;
     }
@@ -83,9 +72,9 @@ public class ViterbiDecoder implements IDecoder
         } else {
             decodingDepth = d;
         }
-        MAX_PATH_METRIC = encoder.outputLength() * decodingDepth;
-        pathMetric = new int[numStates][decodingDepth];
-        pathPreviousVertex = new int[numStates][decodingDepth];
+        MAX_PATH_METRIC  = encoder.outputLength() * decodingDepth;
+        pathMetric       = new int[NUM_STATES][decodingDepth];
+        pathPreviousNode = new int[NUM_STATES][decodingDepth];
     }
 
     private int hamming(int a, int b)
@@ -93,48 +82,48 @@ public class ViterbiDecoder implements IDecoder
         return Integer.bitCount(a ^ b);
     }
 
-    private void initViterbi(int startingState, int[] signalChunks)
+    private void initViterbi(int startingNode, int[] signalChunks)
     {
         // init 2 first possible edges (depth 1):
         wipePathMetric();
-        pathMetric[startingState >>> 1][0] = hamming(signalChunks[0], transitions.output(startingState, 0));
-        pathMetric[startingState >>> 1 | 0x01 << encoder.delay() - 1][0] = hamming(signalChunks[0], transitions.output(startingState, 1));
+        pathMetric[startingNode >>> 1][0] = hamming(signalChunks[0], transitions.output(startingNode, 0));
+        pathMetric[startingNode >>> 1 | 0x01 << encoder.delay() - 1][0] = hamming(signalChunks[0], transitions.output(startingNode, 1));
 
         // init previous vertex for first 2 possible edges (depth 1):
-        wipePathPreviousVertex();
-        pathPreviousVertex[startingState >>> 1][0] = startingState;
-        pathPreviousVertex[startingState >>> 1 | 0x01 << encoder.delay() - 1][0] = startingState;
+        wipePathPreviousNode();
+        pathPreviousNode[startingNode >>> 1][0] = startingNode;
+        pathPreviousNode[startingNode >>> 1 | 0x01 << encoder.delay() - 1][0] = startingNode;
     }
 
     private String originalMessage()
     {
-        // find terminal state with lowest path metric
-        terminalState = 0;
-        for (int state = 0; state < numStates; ++state) {
-            if (pathMetric[state][decodingDepth-1] < pathMetric[terminalState][decodingDepth-1]) {
-                terminalState = state;
+        // find terminal node with lowest path metric
+        terminalNode = 0;
+        for (int node = 0; node < NUM_STATES; ++node) {
+            if (pathMetric[node][decodingDepth-1] < pathMetric[terminalNode][decodingDepth - 1]) {
+                terminalNode = node;
             }
         }
 
-        // read the path from terminal state back to starting state:
+        // read the path from terminal node back to starting node:
         int[] viterbiPath = new int[decodingDepth];
         int[] encoderOutput = new int[decodingDepth];
         int[] origMessage = new int[decodingDepth];
 
-        int currentVertex = terminalState;
-        int prevVertex;
+        int currentNode = terminalNode;
+        int prevNode;
         int input;
         for (int depth = decodingDepth - 1; depth >= 0; --depth) {
-            prevVertex = pathPreviousVertex[currentVertex][depth];
-            if (transitions.nextState(prevVertex, 0) == currentVertex) {
+            prevNode = pathPreviousNode[currentNode][depth];
+            if (transitions.nextState(prevNode, 0) == currentNode) {
                 input = 0;
-            } else if (transitions.nextState(prevVertex, 1) == currentVertex) {
+            } else if (transitions.nextState(prevNode, 1) == currentNode) {
                 input = 1;
-            } else throw new NoSuchElementException("Impossible IS-95 state machine transition from state " + prevVertex + " to state " + currentVertex + " in Viterbi path at depth " + depth);
-            viterbiPath[depth] = currentVertex;
-            encoderOutput[depth] = transitions.output(prevVertex, input);
+            } else throw new NoSuchElementException("Impossible IS-95 state machine transition from state " + prevNode + " to state " + currentNode + " in Viterbi path at depth " + depth);
+            viterbiPath[depth] = currentNode;
+            encoderOutput[depth] = transitions.output(prevNode, input);
             origMessage[depth] = input;
-            currentVertex = prevVertex;
+            currentNode = prevNode;
         }
 
         StringBuilder sb = new StringBuilder();
@@ -172,26 +161,24 @@ public class ViterbiDecoder implements IDecoder
 
     private void viterbi(int[] signalChunks)
     {
-        int depthIndex;  // hopefully less errors
         int prev0, prev1;  // two possible previous vertices
         int input;  // one possible input to get to current state
         int metric0, metric1;
         for (int depth = 2; depth <= decodingDepth; ++depth) {  // begin with depth 2
-            depthIndex = depth  - 1;
-            for (int state = 0; state < numStates; ++state) {
-                prev0 = state << 1 & MASK;  // fixme
+            for (int state = 0; state < NUM_STATES; ++state) {
+                prev0 = state << 1 & MASK;
                 prev1 = state << 1 & MASK | 0x01;
-                if (pathPreviousVertex[prev0][depthIndex - 1] > -1 || pathPreviousVertex[prev1][depthIndex - 1] > -1) {  // path to one of previous vertices exists
+                if (pathPreviousNode[prev0][depth - 2] > -1 || pathPreviousNode[prev1][depth - 2] > -1) {  // path to one of previous vertices exists
                     input = state >>> encoder.delay() - 1;
-                    metric0 = pathMetric[prev0][depthIndex - 1] + hamming(signalChunks[depthIndex], transitions.output(prev0, input));
-                    metric1 = pathMetric[prev1][depthIndex - 1] + hamming(signalChunks[depthIndex], transitions.output(prev1, input));
+                    metric0 = pathMetric[prev0][depth - 2] + hamming(signalChunks[depth - 1], transitions.output(prev0, input));
+                    metric1 = pathMetric[prev1][depth - 2] + hamming(signalChunks[depth - 1], transitions.output(prev1, input));
                     if (metric0 < metric1) {
-                        pathMetric[state][depthIndex] = metric0;
-                        pathPreviousVertex[state][depthIndex] = prev0;
+                        pathMetric[state][depth - 1]       = metric0;
+                        pathPreviousNode[state][depth - 1] = prev0;
                     }
                     else {
-                        pathMetric[state][depthIndex] = metric1;
-                        pathPreviousVertex[state][depthIndex] = prev1;
+                        pathMetric[state][depth - 1]       = metric1;
+                        pathPreviousNode[state][depth - 1] = prev1;
                     }
                 }
             }
@@ -203,7 +190,7 @@ public class ViterbiDecoder implements IDecoder
      */
     private void wipePathMetric()
     {
-        for (int i = 0; i < numStates; ++i) {
+        for (int i = 0; i < NUM_STATES; ++i) {
             Arrays.fill(pathMetric[i], MAX_PATH_METRIC + 1);
         }
     }
@@ -211,10 +198,10 @@ public class ViterbiDecoder implements IDecoder
     /**
      * No paths exist in the beginning. All previous vertices are set to -1.
      */
-    private void wipePathPreviousVertex()
+    private void wipePathPreviousNode()
     {
-        for (int i = 0; i < numStates; ++i) {
-            Arrays.fill(pathPreviousVertex[i], -1);
+        for (int i = 0; i < NUM_STATES; ++i) {
+            Arrays.fill(pathPreviousNode[i], -1);
         }
     }
 }
