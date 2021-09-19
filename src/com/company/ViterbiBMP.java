@@ -17,29 +17,16 @@ public class ViterbiBMP
     private final IPlainDecoder   plainDecoder;
     private final INoiseGenerator noiseGenerator;
     private final IEncoder        is95Encoder;
+    private final IDecoder        viterbiDecoder;
 
-    public ViterbiBMP(IPlainEncoder pe, IPlainDecoder pd, INoiseGenerator ng, IEncoder e)
+    public ViterbiBMP(IPlainEncoder pe, IPlainDecoder pd, INoiseGenerator ng, IEncoder e, IDecoder vd)
     {
-        assert equals(pe != null && pd != null && ng != null && e != null);
+        assert equals(pe != null && pd != null && ng != null && e != null && vd != null);
         plainEncoder = pe;
         plainDecoder = pd;
         noiseGenerator = ng;
         is95Encoder = e;
-    }
-
-    private byte[] readCodeText(Path path) throws IOException
-    {
-        byte[] bytes = Files.readAllBytes(path);  // assume there is correct number of bytes
-
-        // trim EOL:
-        if (bytes[bytes.length-1] == 0x0D)  // CR - macOS
-            bytes = Arrays.copyOfRange(bytes, 0, bytes.length - 1);
-        else if (bytes[bytes.length-1] == 0x0A)  // LF - Unix/Mac
-            bytes = Arrays.copyOfRange(bytes, 0, bytes.length-1);
-        else if (bytes[bytes.length-2] == 0x0D && bytes[bytes.length-1] == 0x0A)  // CR LF - Windows
-            bytes = Arrays.copyOfRange(bytes, 0, bytes.length-2);
-
-        return bytes;
+        viterbiDecoder = vd;
     }
 
     /**
@@ -61,7 +48,7 @@ public class ViterbiBMP
         }
         assert equals(inImg != null);
 
-        // encode image, add noise and write ascii to disk:
+        // encode image, add noise and write ascii code-text to disk:
         String is95Text = is95Encoder.encode(inImg);
         if (noiseGenerator != null) {
             is95Text = noiseGenerator.noisify(is95Text);
@@ -72,16 +59,24 @@ public class ViterbiBMP
             e.printStackTrace();
         }
 
-        // read ASCII from disk:
-        byte[] asciiBytes = null;
+        // read ASCII code-text from disk:
+        byte[] codeText = null;
         try {
-            asciiBytes = readCodeText(txtPath);
+            codeText = readCodeText(txtPath);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        assert equals(asciiBytes != null);
+        assert equals(codeText != null);
 
-        // decode image and write to disk
+        // decode image and write to disk:
+        byte[] plainText = viterbiDecoder.decodeIS95(codeText, inImg.getWidth(), inImg.getHeight());
+        // after decoding use existing functionality to write plain-text to BMP:
+        BufferedImage outImg = plainDecoder.decodeBMP(plainText, inImg.getWidth(), inImg.getHeight());
+        try {
+            ImageIO.write(outImg, "bmp", new File(outBMPPath.toString()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -130,6 +125,20 @@ public class ViterbiBMP
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
+    private byte[] readCodeText(Path path) throws IOException
+    {
+        byte[] bytes = Files.readAllBytes(path);  // assume there is correct number of bytes
+
+        // trim EOL:
+        if (bytes[bytes.length-1] == 0x0D)  // CR - macOS
+            bytes = Arrays.copyOfRange(bytes, 0, bytes.length - 1);
+        else if (bytes[bytes.length-1] == 0x0A)  // LF - Unix/Mac
+            bytes = Arrays.copyOfRange(bytes, 0, bytes.length-1);
+        else if (bytes[bytes.length-2] == 0x0D && bytes[bytes.length-1] == 0x0A)  // CR LF - Windows
+            bytes = Arrays.copyOfRange(bytes, 0, bytes.length-2);
+
+        return bytes;
     }
 }

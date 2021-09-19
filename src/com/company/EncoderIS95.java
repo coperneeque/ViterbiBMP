@@ -9,20 +9,20 @@ import static com.company.ViterbiBMP.BITS_PER_PIXEL;
  */
 public class EncoderIS95 implements IEncoder
 {
-    final int       IS95_OUTPUT_LENGTH;  // 32 bit maximum
-    final int       IS95_DELAY          = 8;
-    final boolean   WITH_OUTPUT_BITS    = false;
+    final int     OUTPUT_LENGTH;  // 32 bit maximum
+    final int     DELAY            = 8;
+    final boolean WITH_OUTPUT_BITS = false;
 
     public EncoderIS95()
     {
         if (WITH_OUTPUT_BITS)
-            IS95_OUTPUT_LENGTH = 4;
+            OUTPUT_LENGTH = 4;
         else
-            IS95_OUTPUT_LENGTH = 3;
+            OUTPUT_LENGTH = 3;
     }
 
     @Override
-    public int delay() { return IS95_DELAY; }
+    public int delay() { return DELAY; }
 
     @Override
     public String encode(BufferedImage inImg) throws NullPointerException
@@ -95,6 +95,9 @@ public class EncoderIS95 implements IEncoder
                 inputBitsLSR >> 3 ^
                 inputBitsLSR) & 0x01; */
     }
+
+    @Override
+    public int outputLength() { return OUTPUT_LENGTH; }
 
     @Override
     public boolean withOutputBits() { return WITH_OUTPUT_BITS; }
