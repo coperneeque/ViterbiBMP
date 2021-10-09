@@ -36,9 +36,12 @@ public class EncoderIS95 implements IEncoder
         for (int h = 0; h < inImg.getHeight(); ++h) {
             for (int w = 0; w < inImg.getWidth(); ++w) {
                 rgb = inImg.getRGB(w, h);
-                rgb <<= 32 - BITS_PER_PIXEL;
+                rgb = Integer.reverse(rgb);  // 8 bits of alpha channel are now LSB
+                rgb &= 0xffffff00;  // wipe alpha channel bits
+//                rgb <<= 32 - BITS_PER_PIXEL;
                 sb.append(encode24bits(rgb | (int)lsr & 0xff));
                 lsr = (byte) (rgb >>> BITS_PER_PIXEL);
+//                lsr = (byte) (Integer.reverse(lsr) >>> BITS_PER_PIXEL);
             }
         }
 

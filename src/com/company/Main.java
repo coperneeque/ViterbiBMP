@@ -26,7 +26,7 @@ public class Main
 //        Path outIS95Path = Paths.get("assets", "testerIS95.txt");
         if (args.length > 5) outIS95Path = Paths.get(args[5]);
 
-        int decodingDepth = 24;
+        int decodingDepth = 60;
         if (args.length > 6) decodingDepth = Integer.parseInt(args[6]);
 
         Path decodedImgPath = Paths.get("assets", "outIS95.bmp");
@@ -44,8 +44,9 @@ public class Main
         viterbiDecoder.setDecodingDepth(decodingDepth);
 
         ViterbiBMP viterbi = new ViterbiBMP(plainEncoder, plainDecoder, noiseGenerator, is95Encoder, viterbiDecoder);
+//        ViterbiBMP viterbi = new ViterbiBMP(plainEncoder, plainDecoder, null, is95Encoder, viterbiDecoder);
 
-        viterbi.runPlain(imagePath, textPath, outImgPath);
+//        viterbi.runPlain(imagePath, textPath, outImgPath);
         viterbi.runIS95(imagePath, outIS95Path, decodedImgPath);
         viterbi.displayErrors(imagePath, decodedImgPath);
     }

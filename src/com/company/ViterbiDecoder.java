@@ -50,6 +50,7 @@ public class ViterbiDecoder implements IDecoder
             sb.append(originalMessage());
         }
 
+//        byte[] plainText = sb.reverse().toString().getBytes(StandardCharsets.UTF_8);
         byte[] plainText = sb.toString().getBytes(StandardCharsets.UTF_8);
         /*
          * We are expecting height × width × BITS_PER_PIXEL bytes of image data (for bee100.bmp it's 978000 bytes).
@@ -58,7 +59,7 @@ public class ViterbiDecoder implements IDecoder
         if (plainText.length > numPixels * BITS_PER_PIXEL)
             plainText = Arrays.copyOf(plainText, numPixels * BITS_PER_PIXEL);
 
-        System.out.println("[ ViterbiDecoder] Full path metric: " + fullPathMetric);
+        System.out.println("[ ViterbiDecoder ] Full path metric: " + fullPathMetric);
         return plainText;
     }
 
@@ -84,12 +85,12 @@ public class ViterbiDecoder implements IDecoder
         return Integer.bitCount(a ^ b);
     }
 
-    private void initViterbi(int startingNode, int[] signalChunks)
+    private void initViterbi(int startingNode, int[] toDecode)
     {
         // init 2 first possible edges (depth 1):
         wipePathMetric();
-        pathMetric[startingNode >>> 1][0] = hamming(signalChunks[0], transitions.output(startingNode, 0));
-        pathMetric[startingNode >>> 1 | 0x01 << encoder.delay() - 1][0] = hamming(signalChunks[0], transitions.output(startingNode, 1));
+        pathMetric[startingNode >>> 1][0] = hamming(toDecode[0], transitions.output(startingNode, 0));
+        pathMetric[startingNode >>> 1 | 0x01 << encoder.delay() - 1][0] = hamming(toDecode[0], transitions.output(startingNode, 1));
 
         // init previous vertex for first 2 possible edges (depth 1):
         wipePathPreviousNode();
@@ -127,8 +128,8 @@ public class ViterbiDecoder implements IDecoder
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < decodingDepth; ++i) {
-//            sb.append(Integer.toBinaryString(origMessage[i]));
-            sb.append(Integer.toBinaryString(origMessage[decodingDepth -1 -i]));
+            sb.append(Integer.toBinaryString(origMessage[i]));
+//            sb.append(Integer.toBinaryString(origMessage[decodingDepth -1 -i]));
         }
 
         return sb.toString();
@@ -158,7 +159,7 @@ public class ViterbiDecoder implements IDecoder
         return ret;
     }
 
-    private void viterbi(int[] signalChunks)
+    private void viterbi(int[] toDecode)
     {
         int prev0, prev1;  // two possible previous vertices
         int input;  // one possible input to get to current state
@@ -169,8 +170,8 @@ public class ViterbiDecoder implements IDecoder
                 prev1 = state << 1 & MASK | 0x01;
                 if (pathPreviousNode[prev0][depth - 2] > -1 || pathPreviousNode[prev1][depth - 2] > -1) {  // path to one of previous vertices exists
                     input = state >>> encoder.delay() - 1;
-                    metric0 = pathMetric[prev0][depth - 2] + hamming(signalChunks[depth - 1], transitions.output(prev0, input));
-                    metric1 = pathMetric[prev1][depth - 2] + hamming(signalChunks[depth - 1], transitions.output(prev1, input));
+                    metric0 = pathMetric[prev0][depth - 2] + hamming(toDecode[depth - 1], transitions.output(prev0, input));
+                    metric1 = pathMetric[prev1][depth - 2] + hamming(toDecode[depth - 1], transitions.output(prev1, input));
                     if (metric0 < metric1) {
                         pathMetric[state][depth - 1]       = metric0;
                         pathPreviousNode[state][depth - 1] = prev0;
@@ -184,7 +185,7 @@ public class ViterbiDecoder implements IDecoder
         }
     }
 
-    /**
+    /*
      * No paths exist in the beginning. All metrics are set to maximum + 1.
      */
     private void wipePathMetric()
@@ -194,7 +195,7 @@ public class ViterbiDecoder implements IDecoder
         }
     }
 
-    /**
+    /*
      * No paths exist in the beginning. All previous vertices are set to -1.
      */
     private void wipePathPreviousNode()

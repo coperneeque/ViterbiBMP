@@ -35,9 +35,10 @@ public class NoiseGenerator implements INoiseGenerator
             chars[i] = noisifyChar(chars[i]);
         }
 
-        System.out.println("[ NoiseGenerator ] " + chars.length + " bits in channel. " + errorCount + " errors\n" +
-                           "[ NoiseGenerator ] Requested error rate: " + (float) errorRate / (BOUND-1) * 100 +
-                           "%. Actual error rate: " + (float) errorCount / chars.length * 100 + "%");
+        System.out.println("[ NoiseGenerator ] " + chars.length + " bits in channel. Requested error rate: " +
+                           (float) errorRate / (BOUND-1) * 100 +" %\n" +
+                           "[ NoiseGenerator ] Generated " + errorCount + " bit errors. " +
+                           "Actual error rate: " + (float) errorCount / chars.length * 100 + "%");
 
         return new String(chars);
     }
@@ -76,7 +77,7 @@ public class NoiseGenerator implements INoiseGenerator
 
     private char noisifyChar(char c) {
 //        if (c != '0' && c != '1') throw new InvalidParameterException("noisifyChar(char) only works for '0' and '1'!");
-        assert equals(c == '0' || c == '1');
+        assert equals((c == '0' || c == '1') == true);
 
 //        if (errorRate == 0) return c;
 
